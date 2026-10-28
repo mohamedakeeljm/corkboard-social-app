@@ -1,8 +1,20 @@
 const path = require("path");
+const os = require("os");
+const fs = require("fs");
 const { DatabaseSync } = require("node:sqlite");
 
-const db = new DatabaseSync(path.join(__dirname, "social.db"));
-db.exec("PRAGMA journal_mode = WAL");
+const dbPath = process.env.VERCEL
+  ? path.join(os.tmpdir(), "social.db")
+  : path.join(__dirname, "social.db");
+
+const db = new DatabaseSync(dbPath);
+try {
+  db.exec("PRAGMA journal_mode = WAL");
+} catch (e) {
+  try {
+    db.exec("PRAGMA journal_mode = DELETE");
+  } catch (err) {}
+}
 db.exec("PRAGMA foreign_keys = ON");
 
 // ---------- Schema ----------

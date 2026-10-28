@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Corkboard — a small social board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/css/style.css" />
+</head>
+<body>
+
+  <!-- ===================== AUTH SCREEN ===================== -->
+  <section id="authScreen" class="auth-screen">
+    <div class="auth-card">
+      <div class="pin" aria-hidden="true"></div>
+      <h1 class="board-title">Corkboard</h1>
+      <p class="board-tagline">pin a thought. follow the board.</p>
+
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-tab="login">Log in</button>
+        <button class="auth-tab" data-tab="register">Sign up</button>
+      </div>
+
+      <form id="loginForm" class="auth-form">
+        <label>Username or email
+          <input type="text" name="username" required autocomplete="username" />
+        </label>
+        <label>Password
+          <input type="password" name="password" required autocomplete="current-password" />
+        </label>
+        <p class="form-error" id="loginError"></p>
+        <button type="submit" class="btn-stamp">Log in</button>
+      </form>
+
+      <form id="registerForm" class="auth-form hidden">
+        <label>Display name
+          <input type="text" name="displayName" placeholder="Jamie Rivera" required />
+        </label>
+        <label>Username
+          <input type="text" name="username" placeholder="jamie_r" required minlength="3" maxlength="20" pattern="[a-zA-Z0-9_]+" />
+        </label>
+        <label>Email
+          <input type="email" name="email" required />
+        </label>
+        <label>Password
+          <input type="password" name="password" required minlength="6" />
+        </label>
+        <p class="form-error" id="registerError"></p>
+        <button type="submit" class="btn-stamp">Pin my spot</button>
+      </form>
+    </div>
+  </section>
+
+  <!-- ===================== APP SCREEN ===================== -->
+  <div id="appScreen" class="app-shell hidden">
+
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">📌</span>
+        <span class="board-title small">Corkboard</span>
+      </div>
+      <div class="topbar-right">
+        <span class="current-user" id="currentUserChip"></span>
+        <button id="logoutBtn" class="btn-ghost">Log out</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <!-- LEFT NAV -->
+      <aside class="sidebar">
+        <nav class="board-nav">
+          <button class="nav-item active" data-view="feed" data-scope="all">The whole board</button>
+          <button class="nav-item" data-view="feed" data-scope="following">Pinned by people I follow</button>
+          <button class="nav-item" data-view="profile" data-self="true">My profile</button>
+        </nav>
+
+        <div class="composer">
+          <h2 class="composer-title">Pin something</h2>
+          <form id="composerForm">
+            <textarea id="composerInput" maxlength="2000" rows="4" placeholder="What's on the board?"></textarea>
+            <div class="composer-footer">
+              <span class="char-count" id="charCount">2000 left</span>
+              <button type="submit" class="btn-stamp small">Pin it</button>
+            </div>
+          </form>
+        </div>
+      </aside>
+
+      <!-- MAIN COLUMN -->
+      <main class="main-col">
+        <div id="viewTitle" class="view-title">The whole board</div>
+        <div id="feed" class="feed"></div>
+        <p id="feedEmpty" class="empty-note hidden">Nothing pinned here yet.</p>
+      </main>
+
+      <!-- RIGHT: PROFILE PANEL (shown in profile view) -->
+      <aside id="profilePanel" class="profile-panel hidden">
+        <div class="profile-card">
+          <div class="avatar" id="profileAvatar"></div>
+          <h2 id="profileDisplayName"></h2>
+          <p class="handle" id="profileUsername"></p>
+          <p class="bio" id="profileBio"></p>
+
+          <div class="stat-row">
+            <div><strong id="statPosts">0</strong><span>pins</span></div>
+            <button class="stat-btn" id="statFollowers" data-kind="followers"><strong>0</strong><span>followers</span></button>
+            <button class="stat-btn" id="statFollowing" data-kind="following"><strong>0</strong><span>following</span></button>
+          </div>
+
+          <button id="followBtn" class="btn-stamp hidden">Follow</button>
+
+          <form id="editProfileForm" class="edit-profile hidden">
+            <label>Display name<input type="text" name="displayName" maxlength="60" /></label>
+            <label>Bio<textarea name="bio" maxlength="200" rows="3"></textarea></label>
+            <button type="submit" class="btn-stamp small">Save changes</button>
+          </form>
+          <button id="editProfileToggle" class="btn-ghost hidden">Edit profile</button>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- ===================== PEOPLE LIST MODAL ===================== -->
+  <div id="peopleModal" class="modal hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="peopleModalTitle">Followers</h3>
+        <button id="peopleModalClose" class="btn-ghost">Close</button>
+      </div>
+      <ul id="peopleList" class="people-list"></ul>
+    </div>
+  </div>
+
+  <template id="postTemplate">
+    <article class="pinned-card">
+      <div class="pin-dot" aria-hidden="true"></div>
+      <header class="pinned-card-head">
+        <div class="avatar sm avatar-color"></div>
+        <div>
+          <a href="#" class="author-name link-username"></a>
+          <div class="timestamp"></div>
+        </div>
+        <button class="delete-post btn-ghost hidden" title="Unpin this post">✕</button>
+      </header>
+      <p class="pinned-content"></p>
+      <footer class="pinned-card-foot">
+        <button class="like-btn">♡ <span class="like-count">0</span></button>
+        <button class="comment-toggle">💬 <span class="comment-count">0</span></button>
+      </footer>
+      <div class="comments-section hidden">
+        <ul class="comments-list"></ul>
+        <form class="comment-form">
+          <input type="text" maxlength="1000" placeholder="Add a comment…" />
+          <button type="submit" class="btn-ghost">Post</button>
+        </form>
+      </div>
+    </article>
+  </template>
+
+  <template id="commentTemplate">
+    <li class="comment-item">
+      <span class="comment-author link-username"></span>
+      <span class="comment-text"></span>
+      <button class="delete-comment btn-ghost hidden" title="Delete">✕</button>
+    </li>
+  </template>
+
+  <template id="personTemplate">
+    <li class="person-row">
+      <div class="avatar sm avatar-color"></div>
+      <div class="person-info">
+        <a href="#" class="link-username person-name"></a>
+        <p class="person-bio"></p>
+      </div>
+      <button class="person-follow btn-stamp small"></button>
+    </li>
+  </template>
+
+  <script src="/js/app.js"></script>
+</body>
+</html>

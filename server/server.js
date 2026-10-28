@@ -21,11 +21,17 @@ app.use("/api/posts", postRoutes);
 // comments are nested under /api/posts/:postId/comments
 app.use("/api/posts", commentRoutes);
 
+const fs = require("fs");
+
 // Serve the frontend
-app.use(express.static(path.join(__dirname, "public")));
+const publicDir = fs.existsSync(path.join(__dirname, "public"))
+  ? path.join(__dirname, "public")
+  : path.join(__dirname, "../public");
+
+app.use(express.static(publicDir));
 app.get("*", (req, res, next) => {
   if (req.path.startsWith("/api/")) return next();
-  res.sendFile(path.join(__dirname, "public", "index.html"));
+  res.sendFile(path.join(publicDir, "index.html"));
 });
 
 // Fallback error handler
@@ -34,6 +40,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong on the server" });
 });
 
-app.listen(PORT, () => {
-  console.log(`Mini social media server running at http://localhost:${PORT}`);
-});
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`Mini social media server running at http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
